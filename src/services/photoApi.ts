@@ -27,7 +27,7 @@ export const PHOTO_SIZES: PhotoSize[] = [
     { "width": 40, "height": 60, "name": "4x6", "description": "Ảnh thẻ 4x6 cm" },
     { "width": 20, "height": 30, "name": "2x3", "description": "Ảnh thẻ 2x3 cm" },
     { "width": 25, "height": 35, "name": "2.5x3.5", "description": "Ảnh thẻ 2.5x3.5 cm" },
-    { "width": 30, "height": 40, "name": "3x4", "description": "Ảnh thẻ 3x4 cm (nhỏ)" },
+    { "width": 30, "height": 40, "name": "3x4_small", "description": "Ảnh thẻ 3x4 cm (nhỏ)" },
 ];
 
 /**

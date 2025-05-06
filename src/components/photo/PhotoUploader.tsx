@@ -1,7 +1,7 @@
 "use client";
 
 import { getFullUrl, getPhotoSizes, hexToRgb, PhotoProcessResult, PhotoSize, uploadAndProcessPhoto } from "@/services/photoApi";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 interface PhotoUploaderProps {
     onPhotoProcessed?: (result: PhotoProcessResult) => void;
@@ -17,7 +17,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Lấy danh sách kích thước ảnh khi component được mount
-    useState(() => {
+    useEffect(() => {
         const fetchPhotoSizes = async () => {
             try {
                 const sizes = await getPhotoSizes();
@@ -29,7 +29,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         };
 
         fetchPhotoSizes();
-    });
+    }, []); // Empty dependency array means this runs once on mount
 
     // Xử lý khi người dùng chọn file
     const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
