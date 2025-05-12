@@ -2,7 +2,6 @@
 
 import { getFullUrl, getPhotoSizes, hexToRgb, PhotoProcessResult, PhotoSize, uploadAndProcessPhoto } from "@/services/photoApi";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-
 interface PhotoUploaderProps {
     onPhotoProcessed?: (result: PhotoProcessResult) => void;
 }
@@ -14,6 +13,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
     const [selectedSize, setSelectedSize] = useState("3x4");
     const [selectedColor, setSelectedColor] = useState("#FFFFFF");
     const [result, setResult] = useState<PhotoProcessResult | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Lấy danh sách kích thước ảnh khi component được mount
@@ -37,7 +37,8 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         if (!files || files.length === 0) return;
 
         const file = files[0];
-        await processPhoto(file);
+        setSelectedFile(file);
+        setError(null);
     };
 
     // Xử lý khi người dùng kéo thả file
@@ -47,7 +48,8 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
 
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const file = e.dataTransfer.files[0];
-            await processPhoto(file);
+            setSelectedFile(file);
+            setError(null);
         }
     };
 
@@ -58,13 +60,18 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
     };
 
     // Xử lý ảnh với API
-    const processPhoto = async (file: File) => {
+    const processPhoto = async () => {
+        if (!selectedFile) {
+            setError("Vui lòng chọn một ảnh trước khi tạo ảnh thẻ");
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             const rgbColor = hexToRgb(selectedColor);
-            const processResult = await uploadAndProcessPhoto(file, selectedSize, rgbColor);
+            const processResult = await uploadAndProcessPhoto(selectedFile, selectedSize, rgbColor);
 
             setResult(processResult);
 
@@ -122,9 +129,16 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                         <p className="text-sm text-muted-foreground">Đang xử lý ảnh...</p>
                     </div>
                 ) : (
-                    <p className="text-sm text-muted-foreground">
-                        Kéo và thả ảnh vào đây hoặc nhấp để chọn ảnh
-                    </p>
+                    <div className="flex flex-col items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                            Kéo và thả ảnh vào đây hoặc nhấp để chọn ảnh
+                        </p>
+                        {selectedFile && (
+                            <p className="text-sm font-medium text-green-600">
+                                Đã chọn: {selectedFile.name}
+                            </p>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -177,6 +191,17 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                 </div>
             </div>
 
+            {/* Nút tạo ảnh thẻ */}
+            <button
+                onClick={processPhoto}
+                disabled={isLoading || !selectedFile}
+                className={`mt-2 py-2 px-4 rounded-md font-medium transition-colors  ${isLoading || !selectedFile
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+            >
+                {isLoading ? "Đang xử lý..." : "Tạo ảnh thẻ"}
+            </button>
             {/* Hiển thị kết quả */}
             {result && (
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
