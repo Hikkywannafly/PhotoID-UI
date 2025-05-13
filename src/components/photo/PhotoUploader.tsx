@@ -1,7 +1,8 @@
 "use client";
 
-import { getFullUrl, getPhotoSizes, hexToRgb, PhotoProcessResult, PhotoSize, uploadAndProcessPhoto } from "@/services/photoApi";
+import { BorderOptions, getFullUrl, getPhotoSizes, hexToRgb, PhotoProcessResult, PhotoSize, SHEET_FORMATS, SheetOptions, uploadAndProcessPhoto } from "@/services/photoApi";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+
 interface PhotoUploaderProps {
     onPhotoProcessed?: (result: PhotoProcessResult) => void;
 }
@@ -15,6 +16,22 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
     const [result, setResult] = useState<PhotoProcessResult | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Thêm state cho tùy chọn viền
+    const [borderOptions, setBorderOptions] = useState<BorderOptions>({
+        enabled: false,
+        width: 1,
+        color: "#000000"
+    });
+    
+    // Thêm state cho tùy chọn sheet
+    const [sheetOptions, setSheetOptions] = useState<SheetOptions>({
+        enabled: false,
+        format: "A4",
+        columns: 4,
+        rows: 2,
+        spacing: 5
+    });
 
     // Lấy danh sách kích thước ảnh khi component được mount
     useEffect(() => {
@@ -71,7 +88,13 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
 
         try {
             const rgbColor = hexToRgb(selectedColor);
-            const processResult = await uploadAndProcessPhoto(selectedFile, selectedSize, rgbColor);
+            const processResult = await uploadAndProcessPhoto(
+                selectedFile, 
+                selectedSize, 
+                rgbColor,
+                borderOptions,
+                sheetOptions
+            );
 
             setResult(processResult);
 
@@ -103,6 +126,14 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         { value: "#800080", name: "Tím" },
         { value: "#808080", name: "Xám" },
         { value: "#000000", name: "Đen" },
+    ];
+    
+    // Danh sách màu viền
+    const borderColors = [
+        { value: "#000000", name: "Đen" },
+        { value: "#FFFFFF", name: "Trắng" },
+        { value: "#FF0000", name: "Đỏ" },
+        { value: "#0000FF", name: "Xanh dương" },
     ];
 
     return (
@@ -190,6 +221,120 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                     </div>
                 </div>
             </div>
+            
+            {/* Tùy chọn viền */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                    <input
+                        type="checkbox"
+                        id="enableBorder"
+                        checked={borderOptions.enabled}
+                        onChange={(e) => setBorderOptions({...borderOptions, enabled: e.target.checked})}
+                        className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="enableBorder" className="font-medium text-base">Thêm viền cho ảnh thẻ</label>
+                </div>
+                
+                {borderOptions.enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        <div>
+                            <label className="block text-sm mb-1">Độ rộng viền (px)</label>
+                            <input 
+                                type="number" 
+                                min="1" 
+                                max="10"
+                                value={borderOptions.width}
+                                onChange={(e) => setBorderOptions({...borderOptions, width: parseInt(e.target.value)})}
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Màu viền</label>
+                            <div className="flex flex-wrap gap-2">
+                                {borderColors.map((color) => (
+                                    <div
+                                        key={color.value}
+                                        className={`w-8 h-8 rounded-full cursor-pointer ${color.value === "#FFFFFF" ? "border border-gray-300" : ""
+                                            } ${borderOptions.color === color.value ? "ring-2 ring-blue-500" : ""
+                                            }`}
+                                        style={{ backgroundColor: color.value }}
+                                        onClick={() => setBorderOptions({...borderOptions, color: color.value})}
+                                        title={color.name}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+            
+            {/* Tùy chọn sheet */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                    <input
+                        type="checkbox"
+                        id="enableSheet"
+                        checked={sheetOptions.enabled}
+                        onChange={(e) => setSheetOptions({...sheetOptions, enabled: e.target.checked})}
+                        className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="enableSheet" className="font-medium text-base">Tạo sheet ảnh thẻ</label>
+                </div>
+                
+                {sheetOptions.enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        <div>
+                            <label className="block text-sm mb-1">Định dạng giấy</label>
+                            <select
+                                value={sheetOptions.format}
+                                onChange={(e) => setSheetOptions({...sheetOptions, format: e.target.value})}
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            >
+                                {SHEET_FORMATS.map((format) => (
+                                    <option key={format.name} value={format.name}>
+                                        {format.description} ({format.width}x{format.height} mm)
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Số cột x Số hàng</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    max="10"
+                                    value={sheetOptions.columns}
+                                    onChange={(e) => setSheetOptions({...sheetOptions, columns: parseInt(e.target.value)})}
+                                    className="w-full p-2 border border-gray-300 rounded-md"
+                                    placeholder="Số cột"
+                                />
+                                <span className="flex items-center">x</span>
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    max="10"
+                                    value={sheetOptions.rows}
+                                    onChange={(e) => setSheetOptions({...sheetOptions, rows: parseInt(e.target.value)})}
+                                    className="w-full p-2 border border-gray-300 rounded-md"
+                                    placeholder="Số hàng"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Khoảng cách giữa các ảnh (mm)</label>
+                            <input 
+                                type="number" 
+                                min="0" 
+                                max="20"
+                                value={sheetOptions.spacing}
+                                onChange={(e) => setSheetOptions({...sheetOptions, spacing: parseInt(e.target.value)})}
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Nút tạo ảnh thẻ */}
             <button
@@ -202,6 +347,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
             >
                 {isLoading ? "Đang xử lý..." : "Tạo ảnh thẻ"}
             </button>
+            
             {/* Hiển thị kết quả */}
             {result && (
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -222,6 +368,37 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                             className="w-full h-auto rounded-md border border-gray-200"
                         />
                     </div>
+                    
+                    {/* Hiển thị ảnh thẻ có viền nếu có */}
+                    {borderOptions.enabled && result.id_photo_with_border_url && (
+                        <div className="flex flex-col gap-2">
+                            <h3 className="font-medium text-base">Ảnh thẻ có viền</h3>
+                            <img
+                                src={getFullUrl(result.id_photo_with_border_url)}
+                                alt="Ảnh thẻ có viền"
+                                className="w-full h-auto rounded-md border border-gray-200"
+                            />
+                        </div>
+                    )}
+                    
+                    {/* Hiển thị sheet ảnh thẻ nếu có */}
+                    {sheetOptions.enabled && result.photo_sheet_url && (
+                        <div className="flex flex-col gap-2 md:col-span-2">
+                            <h3 className="font-medium text-base">Sheet ảnh thẻ</h3>
+                            <img
+                                src={getFullUrl(result.photo_sheet_url)}
+                                alt="Sheet ảnh thẻ"
+                                className="w-full h-auto rounded-md border border-gray-200"
+                            />
+                            <a 
+                                href={getFullUrl(result.photo_sheet_url)} 
+                                download="photo_sheet.jpg"
+                                className="mt-2 py-2 px-4 rounded-md font-medium bg-green-600 text-white hover:bg-green-700 text-center"
+                            >
+                                Tải xuống sheet ảnh thẻ
+                            </a>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
