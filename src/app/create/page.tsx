@@ -12,8 +12,8 @@ export default function CreatePage() {
 
             <FadeIn.Item>
                 <div className="flex flex-col gap-4">
-                    <h1 className="text-2xl font-bold">Tạo ảnh thẻ tự động</h1>
-                    <p className="text-sm text-muted-foreground">
+                    <h1 className="font-bold text-2xl">Tạo ảnh thẻ tự động</h1>
+                    <p className="text-muted-foreground text-sm">
                         Tải lên ảnh của bạn và chúng tôi sẽ tự động tạo ảnh thẻ theo đúng tiêu chuẩn
                     </p>
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 const Navbar = () => {
     return (
-        <nav className="flex justify-between items-center py-4 px-6 bg-white shadow-sm rounded-lg">
+        <nav className="flex items-center justify-between rounded-lg bg-white px-6 py-4 shadow-sm">
             <div className="flex flex-row items-center space-x-3">
                 <Logo />
                 <div className="flex flex-col font-medium">
@@ -17,17 +17,17 @@ const Navbar = () => {
             </div>
 
             <div className="flex space-x-6">
-                <Link href="/create" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                <Link href="/create" className="font-medium text-sm transition-colors hover:text-blue-600">
                     Tạo ảnh thẻ
                 </Link>
-                <Link href="/remove-bg" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                <Link href="/remove-bg" className="font-medium text-sm transition-colors hover:text-blue-600">
                     Xóa phông nền
                 </Link>
 
-                <Link href="/about" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                <Link href="/about" className="font-medium text-sm transition-colors hover:text-blue-600">
                     Giới thiệu
                 </Link>
-                <Link href="/login" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                <Link href="/login" className="font-medium text-sm transition-colors hover:text-blue-600">
                     Đăng nhập
                 </Link>
             </div>

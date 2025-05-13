@@ -72,8 +72,8 @@ export async function getPhotoSizes(): Promise<PhotoSize[]> {
  */
 export async function uploadAndProcessPhoto(
     file: File,
-    size: string = '3x4',
-    bgColor: string = '255,255,255',
+    size = '3x4',
+    bgColor = '255,255,255',
     borderOptions: BorderOptions = { enabled: false, width: 1, color: '#000000' },
     sheetOptions: SheetOptions = { enabled: false, format: 'A4', columns: 4, rows: 2, spacing: 5 }
 ): Promise<PhotoProcessResult> {
@@ -125,9 +125,9 @@ export function hexToRgb(hexColor: string): string {
     const hex = hexColor.replace('#', '');
 
     // Chuyển đổi sang RGB
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
+    const r = Number.parseInt(hex.substring(0, 2), 16);
+    const g = Number.parseInt(hex.substring(2, 4), 16);
+    const b = Number.parseInt(hex.substring(4, 6), 16);
 
     return `${r},${g},${b}`;
 }
