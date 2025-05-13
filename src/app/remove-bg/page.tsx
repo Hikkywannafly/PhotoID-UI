@@ -64,7 +64,7 @@ export default function RemoveBgPage() {
             formData.append('file', selectedFile);
             formData.append('bg_color', hexToRgb(selectedColor));
 
-            const response = await fetch(`http://localhost:8000/api/photo/remove-bg`, {
+            const response = await fetch("http://localhost:8000/api/photo/remove-bg", {
                 method: 'POST',
                 body: formData,
             });
@@ -113,8 +113,10 @@ export default function RemoveBgPage() {
 
                     {/* Khu vực kéo thả ảnh */}
                     <div
-                        className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${isLoading ? "bg-gray-100 border-gray-300" : "hover:border-blue-500 hover:bg-blue-50/30 border-gray-300"}`}
+                        className={`cursor-pointer rounded-lg border-2 border-dashed p-12 text-center transition-colors ${isLoading ? "border-gray-300 bg-gray-100" : "border-gray-300 hover:border-blue-500 hover:bg-blue-50/30"}`}
                         onClick={openFileDialog}
+                        onKeyDown={(e) => e.key === 'Enter' && openFileDialog()}
+                        tabIndex={0}
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
                     >
@@ -128,10 +130,11 @@ export default function RemoveBgPage() {
 
                         {isLoading ? (
                             <div className="flex flex-col items-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+                                <div className="mb-2 h-8 w-8 animate-spin rounded-full border-blue-500 border-b-2" />
                                 <p className="text-sm text-muted-foreground">Đang xử lý ảnh...</p>
                             </div>
                         ) : (
+
                             <div className="flex flex-col items-center gap-2">
                                 <p className="text-sm text-muted-foreground">
                                     Kéo và thả ảnh vào đây hoặc nhấp để chọn ảnh
@@ -162,6 +165,8 @@ export default function RemoveBgPage() {
                                     className={`w-8 h-8 rounded-full cursor-pointer ${color.value === "#FFFFFF" ? "border border-gray-300" : ""} ${selectedColor === color.value ? "ring-2 ring-blue-500" : ""}`}
                                     style={{ backgroundColor: color.value }}
                                     onClick={() => setSelectedColor(color.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && setSelectedColor(color.value)}
+                                    tabIndex={0}
                                     title={color.name}
                                 />
                             ))}
@@ -234,9 +239,9 @@ export default function RemoveBgPage() {
                                     >
                                         <div className="w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M21 12H3"></path>
-                                                <path d="M8 5l-5 7 5 7"></path>
-                                                <path d="M16 5l5 7-5 7"></path>
+                                                <path d="M21 12H3" />
+                                                <path d="M8 5l-5 7 5 7" />
+                                                <path d="M16 5l5 7-5 7" />
                                             </svg>
                                         </div>
                                     </div>
