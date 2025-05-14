@@ -1,6 +1,6 @@
 "use client";
 
-import { type BorderOptions, getFullUrl, getPhotoSizes, hexToRgb, type PhotoProcessResult, type PhotoSize, SHEET_FORMATS, type SheetOptions, uploadAndProcessPhoto } from "@/services/photoApi";
+import { blendPhotoColor, type BorderOptions, type ColorBlendOptions, enhancePhoto, getFullUrl, getPhotoSizes, hexToRgb, type PhotoProcessResult, type PhotoSize, type RetouchOptions, retouchPhoto, SHEET_FORMATS, type SheetOptions, uploadAndProcessPhoto } from "@/services/photoApi";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 
 interface PhotoUploaderProps {
@@ -16,15 +16,13 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
     const [result, setResult] = useState<PhotoProcessResult | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
-    // Thêm state cho tùy chọn viền
+
+
     const [borderOptions, setBorderOptions] = useState<BorderOptions>({
         enabled: false,
         width: 1,
         color: "#000000"
     });
-    
-    // Thêm state cho tùy chọn sheet
     const [sheetOptions, setSheetOptions] = useState<SheetOptions>({
         enabled: false,
         format: "A4",
@@ -33,7 +31,19 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         spacing: 5
     });
 
-    // Lấy danh sách kích thước ảnh khi component được mount
+
+    const [retouchOptions, setRetouchOptions] = useState<RetouchOptions>({
+        enabled: false,
+        smoothnessLevel: 5
+    });
+
+    const [colorBlendOptions, setColorBlendOptions] = useState<ColorBlendOptions>({
+        enabled: false,
+        style: "natural",
+        intensity: 0.7
+    });
+
+
     useEffect(() => {
         const fetchPhotoSizes = async () => {
             try {
@@ -48,7 +58,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         fetchPhotoSizes();
     }, []); // Empty dependency array means this runs once on mount
 
-    // Xử lý khi người dùng chọn file
+
     const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -58,7 +68,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         setError(null);
     };
 
-    // Xử lý khi người dùng kéo thả file
+
     const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
@@ -70,13 +80,13 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         }
     };
 
-    // Ngăn chặn hành vi mặc định khi kéo thả
+
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
     };
 
-    // Xử lý ảnh với API
+
     const processPhoto = async () => {
         if (!selectedFile) {
             setError("Vui lòng chọn một ảnh trước khi tạo ảnh thẻ");
@@ -88,13 +98,36 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
 
         try {
             const rgbColor = hexToRgb(selectedColor);
-            const processResult = await uploadAndProcessPhoto(
-                selectedFile, 
-                selectedSize, 
+            let processResult = await uploadAndProcessPhoto(
+                selectedFile,
+                selectedSize,
                 rgbColor,
                 borderOptions,
                 sheetOptions
             );
+
+            if (retouchOptions.enabled && colorBlendOptions.enabled) {
+                // Nếu cả hai tùy chọn đều được bật, sử dụng API enhance tổng hợp
+                processResult = await enhancePhoto(
+                    processResult.removed_bg_url,
+                    retouchOptions.smoothnessLevel,
+                    colorBlendOptions.style,
+                    colorBlendOptions.intensity
+                );
+            } else if (retouchOptions.enabled) {
+                // Chỉ làm mịn da
+                processResult = await retouchPhoto(
+                    processResult.removed_bg_url,
+                    retouchOptions.smoothnessLevel
+                );
+            } else if (colorBlendOptions.enabled) {
+                // Chỉ blend màu
+                processResult = await blendPhotoColor(
+                    processResult.removed_bg_url,
+                    colorBlendOptions.style,
+                    colorBlendOptions.intensity
+                );
+            }
 
             setResult(processResult);
 
@@ -109,7 +142,6 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         }
     };
 
-    // Mở hộp thoại chọn file khi nhấp vào vùng kéo thả
     const openFileDialog = () => {
         if (fileInputRef.current) {
             fileInputRef.current.click();
@@ -127,7 +159,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
         { value: "#808080", name: "Xám" },
         { value: "#000000", name: "Đen" },
     ];
-    
+
     // Danh sách màu viền
     const borderColors = [
         { value: "#000000", name: "Đen" },
@@ -223,7 +255,37 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                     </div>
                 </div>
             </div>
-            
+            <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        id="enableRetouch"
+                        checked={retouchOptions.enabled}
+                        onChange={(e) => setRetouchOptions({ ...retouchOptions, enabled: e.target.checked })}
+                        className="h-4 w-4 text-blue-600"
+                    />
+                    <label htmlFor="enableRetouch" className="font-medium text-base">Làm mịn da (Retouch)</label>
+                </div>
+
+                {retouchOptions.enabled && (
+                    <div className="mt-2">
+                        <label htmlFor="smoothnessLevel" className="mb-1 block text-sm">Mức độ làm mịn: {retouchOptions.smoothnessLevel}</label>
+                        <input
+                            id="smoothnessLevel"
+                            type="range"
+                            min="1"
+                            max="10"
+                            value={retouchOptions.smoothnessLevel}
+                            onChange={(e) => setRetouchOptions({ ...retouchOptions, smoothnessLevel: Number.parseInt(e.target.value) })}
+                            className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500">
+                            <span>Nhẹ</span>
+                            <span>Mạnh</span>
+                        </div>
+                    </div>
+                )}
+            </div>
             {/* Tùy chọn viền */}
             <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
                 <div className="mb-3 flex items-center gap-2">
@@ -231,23 +293,23 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                         type="checkbox"
                         id="enableBorder"
                         checked={borderOptions.enabled}
-                        onChange={(e) => setBorderOptions({...borderOptions, enabled: e.target.checked})}
+                        onChange={(e) => setBorderOptions({ ...borderOptions, enabled: e.target.checked })}
                         className="h-4 w-4 text-blue-600"
                     />
                     <label htmlFor="enableBorder" className="font-medium text-base">Thêm viền cho ảnh thẻ</label>
                 </div>
-                
+
                 {borderOptions.enabled && (
                     <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label htmlFor="borderWidth" className="mb-1 block text-sm">Độ rộng viền (px)</label>
-                            <input 
+                            <input
                                 id="borderWidth"
-                                type="number" 
-                                min="1" 
+                                type="number"
+                                min="1"
                                 max="10"
                                 value={borderOptions.width}
-                                onChange={(e) => setBorderOptions({...borderOptions, width: Number.parseInt(e.target.value)})}
+                                onChange={(e) => setBorderOptions({ ...borderOptions, width: Number.parseInt(e.target.value) })}
                                 className="w-full rounded-md border border-gray-300 p-2"
                             />
                         </div>
@@ -259,8 +321,8 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                                         key={color.value}
                                         className={`h-8 w-8 cursor-pointer rounded-full ${color.value === "#FFFFFF" ? "border border-gray-300" : ""} ${borderOptions.color === color.value ? "ring-2 ring-blue-500" : ""}`}
                                         style={{ backgroundColor: color.value }}
-                                        onClick={() => setBorderOptions({...borderOptions, color: color.value})}
-                                        onKeyDown={(e) => e.key === 'Enter' && setBorderOptions({...borderOptions, color: color.value})}
+                                        onClick={() => setBorderOptions({ ...borderOptions, color: color.value })}
+                                        onKeyDown={(e) => e.key === 'Enter' && setBorderOptions({ ...borderOptions, color: color.value })}
                                         role="button"
                                         aria-label={`Select ${color.name} border color`}
                                         title={color.name}
@@ -271,7 +333,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                     </div>
                 )}
             </div>
-            
+
             {/* Tùy chọn sheet */}
             <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
                 <div className="mb-3 flex items-center gap-2">
@@ -279,19 +341,19 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                         type="checkbox"
                         id="enableSheet"
                         checked={sheetOptions.enabled}
-                        onChange={(e) => setSheetOptions({...sheetOptions, enabled: e.target.checked})}
+                        onChange={(e) => setSheetOptions({ ...sheetOptions, enabled: e.target.checked })}
                         className="h-4 w-4 text-blue-600"
                     />
                     <label htmlFor="enableSheet" className="font-medium text-base">Tạo sheet ảnh thẻ</label>
                 </div>
-                
+
                 {sheetOptions.enabled && (
                     <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label className="mb-1 block text-sm">Định dạng giấy</label>
                             <select
                                 value={sheetOptions.format}
-                                onChange={(e) => setSheetOptions({...sheetOptions, format: e.target.value})}
+                                onChange={(e) => setSheetOptions({ ...sheetOptions, format: e.target.value })}
                                 className="w-full rounded-md border border-gray-300 p-2"
                             >
                                 {SHEET_FORMATS.map((format) => (
@@ -304,22 +366,22 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                         <div>
                             <label className="mb-1 block text-sm">Số cột x Số hàng</label>
                             <div className="flex gap-2">
-                                <input 
-                                    type="number" 
-                                    min="1" 
+                                <input
+                                    type="number"
+                                    min="1"
                                     max="10"
                                     value={sheetOptions.columns}
-                                    onChange={(e) => setSheetOptions({...sheetOptions, columns: Number.parseInt(e.target.value)})}
+                                    onChange={(e) => setSheetOptions({ ...sheetOptions, columns: Number.parseInt(e.target.value) })}
                                     className="w-full rounded-md border border-gray-300 p-2"
                                     placeholder="Số cột"
                                 />
                                 <span className="flex items-center">x</span>
-                                <input 
-                                    type="number" 
-                                    min="1" 
+                                <input
+                                    type="number"
+                                    min="1"
                                     max="10"
                                     value={sheetOptions.rows}
-                                    onChange={(e) => setSheetOptions({...sheetOptions, rows: Number.parseInt(e.target.value)})}
+                                    onChange={(e) => setSheetOptions({ ...sheetOptions, rows: Number.parseInt(e.target.value) })}
                                     className="w-full rounded-md border border-gray-300 p-2"
                                     placeholder="Số hàng"
                                 />
@@ -327,12 +389,12 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                         </div>
                         <div>
                             <label className="mb-1 block text-sm">Khoảng cách giữa các ảnh (mm)</label>
-                            <input 
-                                type="number" 
-                                min="0" 
+                            <input
+                                type="number"
+                                min="0"
                                 max="20"
                                 value={sheetOptions.spacing}
-                                onChange={(e) => setSheetOptions({...sheetOptions, spacing: Number.parseInt(e.target.value)})}
+                                onChange={(e) => setSheetOptions({ ...sheetOptions, spacing: Number.parseInt(e.target.value) })}
                                 className="w-full rounded-md border border-gray-300 p-2"
                             />
                         </div>
@@ -349,7 +411,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
             >
                 {isLoading ? "Đang xử lý..." : "Tạo ảnh thẻ"}
             </button>
-            
+
             {/* Hiển thị kết quả */}
             {result && (
                 <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -370,7 +432,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                             className="h-auto w-full rounded-md border border-gray-200"
                         />
                     </div>
-                    
+
                     {/* Hiển thị ảnh thẻ có viền nếu có */}
                     {borderOptions.enabled && result.id_photo_with_border_url && (
                         <div className="flex flex-col gap-2">
@@ -382,7 +444,7 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                             />
                         </div>
                     )}
-                    
+
                     {/* Hiển thị sheet ảnh thẻ nếu có */}
                     {sheetOptions.enabled && result.photo_sheet_url && (
                         <div className="flex flex-col gap-2 md:col-span-2">
@@ -392,8 +454,8 @@ export default function PhotoUploader({ onPhotoProcessed }: PhotoUploaderProps) 
                                 alt="Sheet ảnh thẻ"
                                 className="h-auto w-full rounded-md border border-gray-200"
                             />
-                            <a 
-                                href={getFullUrl(result.photo_sheet_url)} 
+                            <a
+                                href={getFullUrl(result.photo_sheet_url)}
                                 download="photo_sheet.jpg"
                                 className="mt-2 rounded-md bg-green-600 px-4 py-2 text-center font-medium text-white hover:bg-green-700"
                             >

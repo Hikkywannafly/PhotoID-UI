@@ -140,3 +140,128 @@ export function hexToRgb(hexColor: string): string {
 export function getFullUrl(relativePath: string): string {
     return `${API_BASE_URL.replace('/api', '')}${relativePath}`;
 }
+
+/**
+ * Interface cho tùy chọn làm mịn da
+ */
+export interface RetouchOptions {
+    enabled: boolean;
+    smoothnessLevel: number; // Mức độ làm mịn (1-10)
+}
+
+/**
+ * Interface cho tùy chọn blend màu
+ */
+export interface ColorBlendOptions {
+    enabled: boolean;
+    style: string; // Các style: natural, warm, cool, vintage, bw
+    intensity: number; // Cường độ hiệu ứng (0.1-1.0)
+}
+
+// Danh sách style màu
+export const COLOR_STYLES = [
+    { value: "natural", name: "Tự nhiên" },
+    { value: "warm", name: "Ấm" },
+    { value: "cool", name: "Lạnh" },
+    { value: "vintage", name: "Vintage" },
+    { value: "bw", name: "Đen trắng" },
+];
+
+/**
+ * Làm mịn da cho ảnh
+ * @param filePath Đường dẫn file ảnh đã xử lý
+ * @param smoothnessLevel Mức độ làm mịn (1-10)
+ */
+export async function retouchPhoto(
+    filePath: string,
+    smoothnessLevel: number = 5
+): Promise<PhotoProcessResult> {
+    try {
+        const formData = new FormData();
+        formData.append("file_path", filePath);
+        formData.append("smoothness_level", smoothnessLevel.toString());
+
+        const response = await fetch(`${API_BASE_URL}/photo/retouch`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Lỗi API: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Lỗi khi làm mịn da:', error);
+        throw error;
+    }
+}
+
+/**
+ * Blend màu studio cho ảnh
+ * @param filePath Đường dẫn file ảnh đã xử lý
+ * @param style Style màu (natural, warm, cool, vintage, bw)
+ * @param intensity Cường độ hiệu ứng (0.1-1.0)
+ */
+export async function blendPhotoColor(
+    filePath: string,
+    style: string = "natural",
+    intensity: number = 0.7
+): Promise<PhotoProcessResult> {
+    try {
+        const formData = new FormData();
+        formData.append("file_path", filePath);
+        formData.append("style", style);
+        formData.append("intensity", intensity.toString());
+
+        const response = await fetch(`${API_BASE_URL}/photo/color-blend`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Lỗi API: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Lỗi khi blend màu:', error);
+        throw error;
+    }
+}
+
+/**
+ * Nâng cao tổng hợp cho ảnh (kết hợp làm mịn da và blend màu)
+ * @param filePath Đường dẫn file ảnh đã xử lý
+ * @param smoothnessLevel Mức độ làm mịn (1-10)
+ * @param style Style màu (natural, warm, cool, vintage, bw)
+ * @param intensity Cường độ hiệu ứng (0.1-1.0)
+ */
+export async function enhancePhoto(
+    filePath: string,
+    smoothnessLevel: number = 5,
+    style: string = "natural",
+    intensity: number = 0.7
+): Promise<PhotoProcessResult> {
+    try {
+        const formData = new FormData();
+        formData.append("file_path", filePath);
+        formData.append("smoothness_level", smoothnessLevel.toString());
+        formData.append("style", style);
+        formData.append("intensity", intensity.toString());
+
+        const response = await fetch(`${API_BASE_URL}/photo/enhance`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Lỗi API: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Lỗi khi nâng cao ảnh:', error);
+        throw error;
+    }
+}

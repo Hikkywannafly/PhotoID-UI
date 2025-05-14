@@ -27,9 +27,13 @@ const Navbar = () => {
                 <Link href="/about" className="font-medium text-sm transition-colors hover:text-blue-600">
                     Giới thiệu
                 </Link>
-                <Link href="/login" className="font-medium text-sm transition-colors hover:text-blue-600">
+                <Link href="/auth/login" className="rounded-md  text-sm font-medium ">
                     Đăng nhập
                 </Link>
+
+                {/* <Link href="/auth/register" className="rounded-md border  text-sm font-medium  ">
+                    Đăng ký
+                </Link> */}
             </div>
         </nav>
     );
